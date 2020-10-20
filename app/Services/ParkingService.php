@@ -136,7 +136,8 @@ class ParkingService
      */
     public static function getTimeForBothRates($entry_date) {
         try {
-            $exit_date = Carbon::now();
+//            $exit_date = Carbon::now();
+            $exit_date = Carbon::createFromTimeString('04:00:00');
             $entry = Carbon::parse($entry_date);
             $start = Carbon::createFromTimeString(self::RATE['start']);
             $end = Carbon::createFromTimeString(self::RATE['end']);
@@ -168,20 +169,18 @@ class ParkingService
 
                     if ($exit_date->hour > $end->hour) {
 
-                        if ($entry->hour > $exit_date->hour) {
-                            $result['night_hours'] = (24 - $entry->hour)
-                                + $start->hour + ($exit_date->hour - $end->hour);
-                            $result['day_hours'] = $end->hour - $start->hour;
-
-                        } else {
-                            if ($entry->hour > $end->hour) {
-                                $result['night_hours'] = $exit_date->hour - $entry->hour;
-                            } else {
-                                $result['night_hours'] = ($start->hour - $entry->hour)
-                                    + $exit_date->hour - $end->hour;
+                        if ($entry->hour > $end->hour) {
+                            if ($entry->hour > $exit_date->hour) {
+                                $result['night_hours'] = (24 - $entry->hour)
+                                    + $start->hour + ($exit_date->hour - $end->hour);
                                 $result['day_hours'] = $end->hour - $start->hour;
+                            } else {
+                                $result['night_hours'] = $exit_date->hour - $entry->hour;
                             }
-
+                        } else {
+                            $result['night_hours'] = ($start->hour - $entry->hour)
+                                + $exit_date->hour - $end->hour;
+                            $result['day_hours'] = $end->hour - $start->hour;
                         }
 
                     } else {
