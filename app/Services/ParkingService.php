@@ -162,8 +162,10 @@ class ParkingService
 
                 if ($entry->hour > $start->hour
                     && $entry->hour < $end->hour) {
+                    $result['night_hours'] = $exit_date->hour > $end->hour
+                        ? $exit_date->hour - $end->hour
+                        : (24 - $end->hour) + $exit_date->hour;
                     $result['day_hours'] = $end->hour - $entry->hour;
-                    $result['night_hours'] = $exit_date->hour - $end->hour;
                 } else {
 
                     if ($exit_date->hour > $end->hour) {
