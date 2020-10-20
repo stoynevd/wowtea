@@ -136,8 +136,7 @@ class ParkingService
      */
     public static function getTimeForBothRates($entry_date) {
         try {
-//            $exit_date = Carbon::now();
-            $exit_date = Carbon::createFromTimeString('04:00:00');
+            $exit_date = Carbon::now();
             $entry = Carbon::parse($entry_date);
             $start = Carbon::createFromTimeString(self::RATE['start']);
             $end = Carbon::createFromTimeString(self::RATE['end']);
