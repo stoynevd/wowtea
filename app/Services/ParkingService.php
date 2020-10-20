@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Parking;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-use PhpParser\Node\Stmt\If_;
 
 class ParkingService
 {
@@ -39,7 +37,7 @@ class ParkingService
 
     /**
      * This function is used to register a new vehicle in the parking
-     * @param $data
+     * @param $data -> contains the information for the new car that wants to access the parking
      * @return array
      */
     public static function enterParking($data) {
@@ -101,7 +99,9 @@ class ParkingService
                 'success' => true,
                 'car'     => $parkingSpot
             ];
+            //Soft delete is used for the Parking model as we would like to check the records
             $parkingSpot->delete();
+
             return $message;
         } catch (\Exception $e) {
             \Log::error(__CLASS__ . '-->' . __FUNCTION__ . ': ' . $e->getMessage());
@@ -207,7 +207,7 @@ class ParkingService
 
             return $result;
         } catch (\Exception $e) {
-            Log::error(__CLASS__ . '-->' . __FUNCTION__ . ': ' . $e->getMessage());
+            \Log::error(__CLASS__ . '-->' . __FUNCTION__ . ': ' . $e->getMessage());
             exit();
         }
     }
