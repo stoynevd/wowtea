@@ -22,10 +22,11 @@ class ParkingService
      * night_rate represents the cost per hour for the night hours spent on the parking
      */
     const RATE = [
-      'start'       => '08:00',
-      'end'         => '18:00',
-      'day_rate'    => 3,
-      'night_rate'  => 2,
+      'start'          => '08:00',
+      'end'            => '18:00',
+      'day_rate'       => 3,
+      'night_rate'     => 2,
+      'full_days_rate' => 58
     ];
 
     /**
@@ -121,13 +122,15 @@ class ParkingService
         $time_result = self::getTimeForBothRates($entry_date);
 
         return self::RATE['day_rate'] * (isset($time_result['day_hours']) ? $time_result['day_hours'] : 0)
-            + self::RATE['night_rate'] * (isset($time_result['night_hours']) ? $time_result['night_hours'] : 0);
+            + self::RATE['night_rate'] * (isset($time_result['night_hours']) ? $time_result['night_hours'] : 0)
+            + self::RATE['full_days_rate'] * ($time_result['full_days']);
     }
 
     /**
      * This function returns the number of hours spent at the parking
      * day_hours -> the number of hours which fall under the day_rate of the parking
      * night_hours -> the number of hours which fall under the night_rate of the parking
+     * full_days -> the number of full days spent on the parking -> more than 24 hours;
      * @param $entry_date
      * @return array
      */
@@ -140,52 +143,67 @@ class ParkingService
             $result = [];
 
             if ($exit_date->between($start, $end)) {
-                if ($entry->between($start, $end)) {
-                    if ($entry->format('H') > $end) {
-                        $result['day_hours'] = $end->format('H') - $entry->format('H')
-                            + $exit_date->diffInHours($start);
+                if ($entry->hour > $start->hour
+                    && $entry->hour < $end->hour) {
+
+                    if ($entry->hour > $exit_date->hour) {
                         $result['night_hours'] = $end->diffInHours($start->addDay());
+                        $result['day_hours'] = $exit_date->hour - $start->hour;
                     } else {
-                        $result['day_hours'] = $exit_date->format('H') - $entry->format('H');
+                        $result['day_hours'] = $exit_date->hour - $entry->hour;
                     }
+
                 } else {
-                    if ($entry->format('H') > $end) {
-                        $result['night_hours'] = $entry->diffInHours($start->addDay());
-                        $result['day_hours'] = $exit_date->format('H') - $start->format('H');
-                    } else {
-                        $result['night_hours'] = $entry->diffInHours($start);
-                        $result['day_hours'] = $exit_date->format('H') - $start->format('H');
-                    }
+                    $result['night_hours'] = (24 - $entry->hour) + $start->hour;
+                    $result['day_hours'] = $exit_date->hour - $start->hour;
                 }
+
             } else {
-                if ($entry->between($start, $end)) {
-                    if ($exit_date->format('H') > $end) {
-                        $result['night_hours'] = $end->diffInHours($exit_date);
-                        $result['day_hours'] = $entry->diffInHours($end);
-                    } else {
-                        $result['night_hours'] = $end->diffInHours($exit_date->addDay());
-                        $result['day_hours'] = $entry->diffInHours($end);
-                    }
+
+                if ($entry->hour > $start->hour
+                    && $entry->hour < $end->hour) {
+                    $result['day_hours'] = $end->hour - $entry->hour;
+                    $result['night_hours'] = $exit_date->hour - $end->hour;
                 } else {
-                    if ($exit_date->format('H') > $end) {
-                        if ($exit_date->format('H') > $entry->format('H')) {
-                            $result['night_hours'] = $exit_date->format('H') - $entry->format('H');
+
+                    if ($exit_date->hour > $end->hour) {
+
+                        if ($entry->hour > $exit_date->hour) {
+                            $result['night_hours'] = (24 - $entry->hour)
+                                + $start->hour + ($exit_date->hour - $end->hour);
+                            $result['day_hours'] = $end->hour - $start->hour;
+
                         } else {
-                            $result['night_hours'] = $entry->diffInHours($start->addDay())
-                                + $end->diffInHours($exit_date);
-                            $result['day_hours'] = $entry->diffInHours($end);
+                            if ($entry->hour > $end->hour) {
+                                $result['night_hours'] = $exit_date->hour - $entry->hour;
+                            } else {
+                                $result['night_hours'] = ($start->hour - $entry->hour)
+                                    + $exit_date->hour - $end->hour;
+                                $result['day_hours'] = $end->hour - $start->hour;
+                            }
+
                         }
+
                     } else {
-                        if ($exit_date->format('H') > $end) {
-                            $result['night_hours'] = $exit_date->format('H') - $entry->format('H');
+                        if ($entry->hour > $exit_date->hour) {
+
+                            if ($entry->hour > $end->hour) {
+                                $result['night_hours'] = (24 - $entry->hour)
+                                    + $exit_date->hour;
+                            } else {
+                                $result['night_hours'] = ($start->hour - $entry->hour)
+                                    + (24 - $end->hour) + $exit_date->hour;
+                                $result['day_hours'] = $end->hour - $start->hour;
+                            }
+
                         } else {
-                            $result['night_hours'] = $entry->diffInHours($start)
-                                + $end->diffInHours($exit_date->addDay());
-                            $result['day_hours'] = $entry->diffInHours($end);
+                            $result['night_hours'] = $exit_date->hour - $entry->hour;
                         }
                     }
                 }
             }
+
+            $result['full_days'] = $entry->diffInDays($exit_date);
 
             return $result;
         } catch (\Exception $e) {
