@@ -142,13 +142,15 @@ class ParkingService
             $end = Carbon::createFromTimeString(self::RATE['end']);
             $result = [];
 
-            if ($exit_date->between($start, $end)) {
-                if ($entry->hour > $start->hour
-                    && $entry->hour < $end->hour) {
+            if ($exit_date->betweenExcluded($start, $end)) {
+
+                if ($entry->hour >= $start->hour
+                    && $entry->hour <= $end->hour) {
 
                     if ($entry->hour > $exit_date->hour) {
                         $result['night_hours'] = $end->diffInHours($start->addDay());
-                        $result['day_hours'] = $exit_date->hour - $start->hour;
+                        $result['day_hours'] = ($exit_date->hour - $start->hour)
+                            + ($end->hour - $entry->hour);
                     } else {
                         $result['day_hours'] = $exit_date->hour - $entry->hour;
                     }
@@ -160,17 +162,17 @@ class ParkingService
 
             } else {
 
-                if ($entry->hour > $start->hour
-                    && $entry->hour < $end->hour) {
-                    $result['night_hours'] = $exit_date->hour > $end->hour
+                if ($entry->hour >= $start->hour
+                    && $entry->hour <= $end->hour) {
+                    $result['night_hours'] = $exit_date->hour >= $end->hour
                         ? $exit_date->hour - $end->hour
                         : (24 - $end->hour) + $exit_date->hour;
                     $result['day_hours'] = $end->hour - $entry->hour;
                 } else {
 
-                    if ($exit_date->hour > $end->hour) {
+                    if ($exit_date->hour >= $end->hour) {
 
-                        if ($entry->hour > $end->hour) {
+                        if ($entry->hour >= $end->hour) {
                             if ($entry->hour > $exit_date->hour) {
                                 $result['night_hours'] = (24 - $entry->hour)
                                     + $start->hour + ($exit_date->hour - $end->hour);
@@ -187,7 +189,7 @@ class ParkingService
                     } else {
                         if ($entry->hour > $exit_date->hour) {
 
-                            if ($entry->hour > $end->hour) {
+                            if ($entry->hour >= $end->hour) {
                                 $result['night_hours'] = (24 - $entry->hour)
                                     + $exit_date->hour;
                             } else {
